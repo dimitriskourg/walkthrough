@@ -345,16 +345,37 @@ function MermaidERDiagram({ onEntityClick }) {
 }
 ```
 
-### Summary
+### Summary (Accordion — collapsed by default)
+
+The summary is a collapsible accordion. **It starts collapsed** so the diagram is the first thing users see. Clicking toggles between a compact pill and the full summary card.
 
 ```jsx
-function Summary() {
+function Summary({ collapsed, onToggle }) {
+  if (collapsed) {
+    return (
+      <div onClick={onToggle}
+        className="fixed top-16 left-6 z-10 px-3 py-1.5 bg-wt-surface/60 backdrop-blur border border-wt-border rounded-full shadow-lg cursor-pointer hover:bg-wt-surface/80 transition-all duration-300">
+        <span className="text-xs text-wt-muted font-medium">ℹ︎ Summary</span>
+      </div>
+    );
+  }
   return (
-    <div className="fixed top-16 left-6 z-10 max-w-lg px-4 py-3 bg-wt-surface/80 backdrop-blur border border-wt-border rounded-lg shadow-lg pointer-events-none">
+    <div onClick={onToggle}
+      className="fixed top-16 left-6 z-10 max-w-lg px-4 py-3 bg-wt-surface/80 backdrop-blur border border-wt-border rounded-lg shadow-lg cursor-pointer transition-all duration-300">
       <p className="text-sm text-wt-muted leading-relaxed">{SUMMARY}</p>
+      <p className="text-[0.65rem] text-wt-muted/50 mt-1.5">Click to dismiss</p>
     </div>
   );
 }
+```
+
+In `App`, initialize the summary as **collapsed** (`true`):
+
+```jsx
+const [summaryCollapsed, setSummaryCollapsed] = useState(true);
+// ...
+<Summary collapsed={summaryCollapsed} onToggle={() => setSummaryCollapsed(c => !c)} />
+```
 ```
 
 ### DetailPanel
@@ -404,6 +425,7 @@ function DetailPanel({ nodeId, node, onClose }) {
 ```jsx
 function App() {
   const [activeId, _setActiveId] = useState(null);
+  const [summaryCollapsed, setSummaryCollapsed] = useState(true); // collapsed by default
   const pz = usePanZoom();
 
   const setActiveNode = useCallback((nodeId) => {
@@ -426,7 +448,7 @@ function App() {
         <h1 className="text-base font-semibold text-wt-fg">{"TITLE_HERE"}</h1>
         <p className="text-sm text-wt-muted mt-0.5">{"SUBTITLE_HERE"}</p>
       </header>
-      <Summary />
+      <Summary collapsed={summaryCollapsed} onToggle={() => setSummaryCollapsed(c => !c)} />
       <div ref={pz.viewportRef} className="w-full h-screen overflow-hidden cursor-grab active:cursor-grabbing">
         <div ref={pz.canvasRef} className="origin-top-left will-change-transform inline-block p-[80px_60px_60px]">
           <MermaidDiagram onNodeClick={setActiveNode} />

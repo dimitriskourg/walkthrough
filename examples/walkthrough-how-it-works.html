@@ -431,7 +431,7 @@ function ZoomControls({ zoomDisplayRef, onZoomIn, onZoomOut, onFit }) {
 
 function App() {
   const [activeId, _setActiveId] = useState(null);
-  const [summaryCollapsed, setSummaryCollapsed] = useState(false);
+  const [summaryCollapsed, setSummaryCollapsed] = useState(true);
   const pz = usePanZoom();
 
   const collapseSummary = useCallback(() => {
