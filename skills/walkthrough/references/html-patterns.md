@@ -17,8 +17,8 @@ Reference for generating interactive walkthrough HTML files using React (UMD) + 
 3. **TL;DR first** — Summary card above diagram
 4. **Full-size diagram** — Mermaid at natural size, never squished
 5. **Pan + zoom** — Scroll zooms toward cursor, drag pans, auto-fit on load
-6. **Floating detail overlay** — Right side, close (×), description + optional code
-7. **Shiki highlighting** — `vitesse-dark` theme, only for rare nodes with code
+6. **Floating detail overlay** — Right side, close (×), description + code snippet
+7. **Shiki highlighting** — `vitesse-dark` theme, every node has a code snippet
 8. **React + Tailwind CDN** — Declarative components, utility-first styling
 
 ## Color Palette & Tailwind Config
@@ -185,15 +185,15 @@ const NODES = {
     title: "Drawing Interaction",
     description: "1-2 plain-text sentences. What is this? Why does it exist?",
     files: ["app/features/tools/useDrawingInteraction.ts"],
-    // Optional — only the single most illuminating snippet (max 5 lines)
-    // code: `const element = createElement(tool, startPoint, currentPoint)`,
-    // lang: "typescript",  // default; set explicitly for vue, json, css, etc.
+    code: `const element = createElement(tool, startPoint, currentPoint)`,
+    lang: "typescript",  // default; set explicitly for vue, json, css, etc.
   },
 };
 ```
 
 - `description`: plain text, rendered as `<p>` (not `dangerouslySetInnerHTML`)
-- `code`: optional, most nodes should NOT have code. Template literals for multi-line.
+- `code`: **required** — every node must have a useful snippet (1-5 lines). Pick the most representative piece: a key function call, type definition, config, or core algorithm. Use template literals for multi-line.
+- `lang`: required for every node (default `"typescript"`). Set explicitly for vue, json, css, etc.
 - `files`: array of `"path"` or `"path:lines"` strings
 
 ### LEGEND
@@ -227,7 +227,7 @@ App
 ├── Legend (fixed bottom-center)
 ├── DetailPanel (fixed right, conditional)
 │   ├── Close (×), Title, Description (<p>)
-│   ├── CodeBlock (optional — Shiki or fallback)
+│   ├── CodeBlock (Shiki or fallback — every node has one)
 │   └── Files list
 └── KeyboardHint (fixed bottom-right)
 ```
