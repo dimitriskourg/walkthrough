@@ -1,12 +1,12 @@
 # Walkthrough Skill
 
-A Claude Code skill that generates interactive HTML walkthroughs with clickable Mermaid diagrams — flowcharts and ER diagrams — to explain codebase features, flows, architecture, and database schemas.
+A skill that generates interactive HTML walkthroughs with clickable Mermaid diagrams — flowcharts and ER diagrams — to explain codebase features, flows, architecture, and database schemas.
 
 Inspired by [Amp's Shareable Walkthroughs](https://ampcode.com/news/walkthrough).
 
 ## What it does
 
-Ask Claude to walk you through any part of your codebase and it produces a self-contained HTML file with:
+Ask your agent to walk you through any part of your codebase and it produces a self-contained HTML file with:
 
 - A **clickable Mermaid diagram** (flowchart or ER diagram) showing the key concepts and their connections
 - A **detail panel** for each node with a plain-English description, file paths, and optional code snippets
@@ -33,7 +33,7 @@ database schema
 explain the tables
 ```
 
-Claude will:
+The agent will:
 1. Explore the relevant parts of your codebase using parallel subagents
 2. Synthesize findings into 5-12 key concepts and their connections
 3. Generate a single `walkthrough-{topic}.html` file in the project root
@@ -84,7 +84,7 @@ skills/walkthrough/
     html-patterns.md            # HTML template, CSS, and JS patterns reference
 ```
 
-- **skill.md** — The skill prompt that Claude follows. Defines the workflow: scope understanding, parallel codebase exploration, diagram type selection, and HTML generation.
+- **skill.md** — The skill prompt that the agent follows. Defines the workflow: scope understanding, parallel codebase exploration, diagram type selection, and HTML generation.
 - **references/html-patterns.md** — Complete reference for the generated HTML files: React component architecture, Mermaid config, Shiki setup, color palette, pan/zoom implementation, and all the patterns needed to produce a working walkthrough.
 
 ## Tech stack (generated files)
