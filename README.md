@@ -1,21 +1,21 @@
 # Walkthrough Skill
 
-A skill that generates Mermaid diagram files (`.mmd`) — flowcharts and ER diagrams — to explain codebase features, flows, architecture, and database schemas.
+A skill that generates Markdown walkthrough files (`.md`) with embedded Mermaid diagrams — flowcharts and ER diagrams — to explain codebase features, flows, architecture, and database schemas.
 
 Inspired by [Amp's Shareable Walkthroughs](https://ampcode.com/news/walkthrough).
 
 ## What it does
 
-Ask your agent to walk you through any part of your codebase and it produces a self-contained `.mmd` file with:
+Ask your agent to walk you through any part of your codebase and it produces a self-contained `.md` file with:
 
 - A **Mermaid diagram** (flowchart or ER diagram) showing the key concepts and their connections
-- **Rich node labels** with title, description, and file paths embedded directly in each node
-- **Subgraph groupings** for logical organization
-- **Color-coded node types** (components, utilities, events, data, etc.)
+- A **Key Concepts table** listing each concept with its description and file path(s)
+- A **How It Connects** prose section explaining the overall flow in plain English
+- **Subgraph groupings** and **color-coded node types** for visual organization
 
 The goal is fast onboarding: give a new developer a mental model of how something works in under 2 minutes. Not a code reference — a map.
 
-The `.mmd` output renders natively on **GitHub**, in **VS Code** (with Mermaid extensions), in the [**Mermaid Live Editor**](https://mermaid.live), and in many other tools.
+The `.md` output renders natively on **GitHub**, in **VS Code**, and in any Markdown viewer with Mermaid support.
 
 ## Usage
 
@@ -33,7 +33,7 @@ explain the tables
 The agent will:
 1. Explore the relevant parts of your codebase using parallel subagents
 2. Synthesize findings into 5-12 key concepts and their connections
-3. Generate a single `walkthrough-{topic}.mmd` file in the project root
+3. Generate a single `walkthrough-{topic}.md` file in the project root
 
 ## Examples
 
@@ -80,13 +80,20 @@ skills/walkthrough/
 
 ## Output format
 
-The generated `.mmd` files are self-contained Mermaid diagrams. Each node embeds its title, description, and file paths directly in the label:
+The generated `.md` files are self-contained Markdown documents with an embedded Mermaid diagram and a reference table. Example:
+
+````markdown
+# Walkthrough: Authentication Flow
+
+> How login, token management, and session handling work together. Covers the flow from user credentials to authenticated API requests.
+
+## Diagram
 
 ```mermaid
 graph TD
   subgraph core["Core Logic"]
-    authService["<b>Auth Service</b><br/><i>Handles login, logout, and token refresh</i><br/><code>src/services/auth.ts</code>"]
-    tokenStore["<b>Token Store</b><br/><i>Persists JWT tokens in secure storage</i><br/><code>src/stores/token.ts</code>"]
+    authService["<b>Auth Service</b><br/><i>Handles login, logout, and token refresh</i>"]
+    tokenStore["<b>Token Store</b><br/><i>Persists JWT tokens in secure storage</i>"]
   end
 
   authService -->|"reads/writes"| tokenStore
@@ -97,4 +104,16 @@ graph TD
   class tokenStore data
 ```
 
-No build step, no CDN dependencies. Just a `.mmd` file that renders anywhere Mermaid is supported.
+## Key Concepts
+
+| Concept | Description | File(s) |
+|---------|-------------|---------|
+| **Auth Service** | Handles login, logout, and token refresh | `src/services/auth.ts` |
+| **Token Store** | Persists JWT tokens in secure storage | `src/stores/token.ts` |
+
+## How It Connects
+
+The Auth Service is the central piece that handles all authentication operations. When a user logs in, it validates credentials and stores the resulting JWT token in the Token Store. On subsequent requests, the Auth Service reads from the Token Store to attach tokens to API calls. When tokens expire, the Auth Service handles refresh automatically.
+````
+
+No build step, no CDN dependencies. Just a `.md` file that renders on GitHub, VS Code, and any Markdown viewer with Mermaid support.

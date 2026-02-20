@@ -1,22 +1,27 @@
 ---
 name: walkthrough
-description: Generates a Mermaid diagram (.mmd file) that explains how a codebase feature, flow, architecture, or database schema works. Designed for fast onboarding — each walkthrough is a visual mental model readable in under 2 minutes. Use when asked to walkthrough, explain a flow, trace a code path, show how something works, explain the architecture, visualize a database schema, or explore a data model.
-compatibility: Designed for Claude Code (or similar products). Output renders on GitHub, VS Code, Mermaid Live Editor, or any Mermaid-compatible viewer.
+description: Generates a Markdown walkthrough (.md file) with an embedded Mermaid diagram that explains how a codebase feature, flow, architecture, or database schema works. Designed for fast onboarding — each walkthrough is a visual mental model readable in under 2 minutes. Use when asked to walkthrough, explain a flow, trace a code path, show how something works, explain the architecture, visualize a database schema, or explore a data model.
+compatibility: Designed for Claude Code (or similar products). Output renders on GitHub, VS Code, and any Markdown viewer with Mermaid support.
 allowed-tools: Bash Read Write Glob Grep Task
 metadata:
   author: Alexander Opalic
-  version: "2.0"
+  version: "3.0"
 ---
 
 # Codebase Walkthrough Generator
 
-Generate Mermaid diagram files (`.mmd`) that give new developers a **quick mental model** of how a feature or system works. The goal is fast onboarding — a rough map of concepts and connections, not a code reference. Each walkthrough should be readable in under 2 minutes.
+Generate Markdown walkthrough files (`.md`) that give new developers a **quick mental model** of how a feature or system works. The goal is fast onboarding — a rough map of concepts and connections, not a code reference. Each walkthrough should be readable in under 2 minutes.
 
 ## Output Format
 
-The output is a single `.mmd` file containing a self-contained Mermaid diagram. This file renders natively on GitHub, in VS Code (with Mermaid extensions), in the [Mermaid Live Editor](https://mermaid.live), and in many other tools.
+The output is a single `.md` file containing:
 
-The diagram itself contains **all the information**: node labels, descriptions, file paths, and relationship labels — everything embedded directly in the diagram. No separate detail panels or HTML needed.
+1. **Title and summary** — A heading and 2-3 sentence overview of what the walkthrough covers
+2. **Mermaid diagram** — An embedded Mermaid diagram (in a fenced code block) showing the key concepts and how they connect
+3. **Key Concepts table** — A reference table listing each node with its description and file path(s)
+4. **How It Connects** — A brief prose section explaining the overall flow in plain English
+
+The `.md` file renders natively on **GitHub**, in **VS Code**, and in any Markdown viewer that supports Mermaid fenced code blocks.
 
 ## Workflow
 
@@ -111,17 +116,14 @@ Pick the Mermaid diagram type based on the topic:
 
 **Direction**: Use `graph TD` (top-down) for hierarchical flows, `graph LR` (left-right) for sequential pipelines.
 
-**Node labels**: Each node label includes a **title**, a **brief description**, and **file path(s)** — all embedded directly in the node using line breaks. This makes the diagram self-contained.
+**Node labels**: Each node label includes a **title** and a **brief description** embedded directly in the node using line breaks. File paths go in the Key Concepts table in the markdown file, keeping the diagram clean.
 
 **Node label format** (using HTML-style line breaks):
 ```
-nodeId["<b>Title</b><br/><i>Brief description of what this does</i><br/><code>path/to/file.ts</code>"]
+nodeId["<b>Title</b><br/><i>Brief description of what this does</i>"]
 ```
 
-For nodes with multiple files:
-```
-nodeId["<b>Title</b><br/><i>Description here</i><br/><code>path/to/file1.ts</code><br/><code>path/to/file2.ts</code>"]
-```
+File paths are **not** included in node labels — they go in the Key Concepts table in the markdown file. This keeps the diagram clean and scannable.
 
 **Node types** (styled by category):
 | Type | Style | Use for |
@@ -179,28 +181,32 @@ erDiagram
 
 **Column markers**: `PK` (primary key), `FK` (foreign key), `UK` (unique).
 
-### Step 4: Generate the Mermaid file
+### Step 4: Generate the Markdown file
 
-Create a single `.mmd` file with the complete diagram.
+Create a single `.md` file containing the diagram and supporting content.
 
-**File location**: Write to the project root as `walkthrough-{topic}.mmd` (e.g., `walkthrough-canvas-drawing.mmd`). Use kebab-case for the topic slug.
+**File location**: Write to the project root as `walkthrough-{topic}.md` (e.g., `walkthrough-canvas-drawing.md`). Use kebab-case for the topic slug.
 
 **File structure**:
 
-```mermaid
-%% Walkthrough: Title of the Walkthrough
-%% Description: 2-3 sentence TL;DR summary of what this diagram explains.
+````markdown
+# Walkthrough: Title of the Walkthrough
 
+> 2-3 sentence TL;DR summary of what this walkthrough covers. Explains the scope and what a reader will understand after reading it.
+
+## Diagram
+
+```mermaid
 graph TD
   %% --- Subgroup: User Input ---
   subgraph user_input["User Input"]
-    userPrompt["<b>User Prompt</b><br/><i>The natural-language request that triggers the walkthrough</i><br/><code>skills/walkthrough/skill.md</code>"]
+    userPrompt(["<b>User Prompt</b><br/><i>The natural-language request that triggers the walkthrough</i>"])
   end
 
   %% --- Subgroup: Processing ---
   subgraph processing["Processing"]
-    scopeUnderstanding["<b>Scope Understanding</b><br/><i>Clarifies what the user wants explained</i><br/><code>skills/walkthrough/skill.md:14-26</code>"]
-    parallelExploration["<b>Parallel Subagents</b><br/><i>Launches 2-4 Explore agents to read code in parallel</i><br/><code>skills/walkthrough/skill.md:28-84</code>"]
+    scopeUnderstanding["<b>Scope Understanding</b><br/><i>Clarifies what the user wants explained</i>"]
+    parallelExploration["<b>Parallel Subagents</b><br/><i>Launches 2-4 Explore agents to read code in parallel</i>"]
   end
 
   %% Edges
@@ -221,15 +227,33 @@ graph TD
   class parallelExploration composable
 ```
 
-**Key rules for the .mmd file**:
+## Key Concepts
 
-1. **Start with comments** — Title and TL;DR summary as `%%` comments at the top
-2. **Rich node labels** — Every node must include `<b>Title</b>`, `<i>description</i>`, and `<code>file path</code>` using HTML tags and `<br/>` line breaks
-3. **Descriptions are 1-2 sentences** — Answer "what is this?" and "why does it exist?"
-4. **File paths are real** — Every `<code>` path must point to an actual file in the codebase. Use `path:lines` format when relevant.
-5. **Group edges after subgraphs** — Define all edges in a block after the subgraph definitions for readability
-6. **Always include classDef and class** — Style definitions go at the end
-7. **Comment sections** — Use `%%` comments to separate logical sections (subgroups, edges, styles)
+| Concept | Description | File(s) |
+|---------|-------------|---------|
+| **User Prompt** | The natural-language request that triggers the walkthrough | `skills/walkthrough/skill.md` |
+| **Scope Understanding** | Clarifies what the user wants explained | `skills/walkthrough/skill.md:14-26` |
+| **Parallel Subagents** | Launches 2-4 Explore agents to read code in parallel | `skills/walkthrough/skill.md:28-84` |
+
+## How It Connects
+
+A brief prose description (3-5 sentences) of the overall flow in plain English, explaining how the key concepts work together. Write this for someone who has never seen the codebase — it should read like a short paragraph you'd tell a new teammate.
+````
+
+**Key rules for the .md file**:
+
+1. **Title as H1** — Use `# Walkthrough: Topic` as the document title
+2. **Blockquote summary** — A `>` blockquote with 2-3 sentence TL;DR immediately after the title
+3. **Diagram section** — The Mermaid diagram goes in a fenced code block (` ```mermaid `) under an `## Diagram` heading
+4. **Simplified node labels in diagram** — Nodes include `<b>Title</b>` and `<i>description</i>` but **NOT** file paths (those go in the table instead). This keeps the diagram clean and readable.
+5. **Key Concepts table** — An `## Key Concepts` section with a Markdown table listing every node's concept name, description, and file path(s). Every row must correspond to a node in the diagram.
+6. **How It Connects prose** — An `## How It Connects` section with 3-5 sentences explaining the overall flow in plain English
+7. **Rich diagram labels** — Every node must include `<b>Title</b>` and `<i>description</i>` using HTML tags and `<br/>` line breaks
+8. **Descriptions are 1-2 sentences** — Answer "what is this?" and "why does it exist?"
+9. **File paths are real** — Every path in the Key Concepts table must point to an actual file in the codebase. Use `path:lines` format when relevant.
+10. **Group edges after subgraphs** — Define all edges in a block after the subgraph definitions for readability
+11. **Always include classDef and class** — Style definitions go at the end of the diagram
+12. **Comment sections** — Use `%%` comments to separate logical sections within the diagram (subgroups, edges, styles)
 
 ## Mermaid Conventions
 
@@ -263,16 +287,25 @@ nodeId[("label")]        %% Cylinder — databases/storage
 ## Quality Checklist
 
 Before finishing, verify:
+
+**Markdown structure:**
+- [ ] File has an H1 title (`# Walkthrough: Topic`)
+- [ ] Blockquote TL;DR summary is present after the title
+- [ ] `## Diagram` section contains the Mermaid fenced code block
+- [ ] `## Key Concepts` section has a table with Concept, Description, and File(s) columns
+- [ ] `## How It Connects` section has 3-5 sentences of prose explanation
+- [ ] Every row in the Key Concepts table corresponds to a node in the diagram
+
+**Diagram quality:**
 - [ ] Diagram has **5-12 nodes** (not more)
-- [ ] Every node label includes a title, description, and file path
+- [ ] Every node label includes a title and description (file paths are in the table, not the diagram)
 - [ ] Node titles are plain English (no function signatures or file names as titles)
 - [ ] No node description exceeds 2 sentences
-- [ ] TL;DR summary is present as a `%%` comment at the top
 - [ ] Every node maps to a real file in the codebase
-- [ ] File paths are correct and relative to project root
+- [ ] File paths in the Key Concepts table are correct and relative to project root
 - [ ] The flowchart accurately represents the real code flow
 - [ ] The diagram renders without Mermaid syntax errors
 - [ ] Subgraph labels are approachable ("User Input") not technical ("Composable Layer")
 - [ ] Edge labels are plain verbs ("triggers") not method names ("handlePointerDown()")
 - [ ] classDef styles and class assignments are included
-- [ ] The `.mmd` file is self-contained — no external dependencies
+- [ ] The `.md` file is self-contained — no external dependencies
