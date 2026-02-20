@@ -1,18 +1,22 @@
 ---
 name: walkthrough
-description: Generates a self-contained HTML file with an interactive, clickable Mermaid diagram (flowchart or ER diagram) that explains how a codebase feature, flow, architecture, or database schema works. Designed for fast onboarding — each walkthrough is a visual mental model readable in under 2 minutes. Use when asked to walkthrough, explain a flow, trace a code path, show how something works, explain the architecture, visualize a database schema, or explore a data model.
-compatibility: Designed for Claude Code (or similar products). Requires a browser to open generated HTML files.
+description: Generates a Mermaid diagram (.mmd file) that explains how a codebase feature, flow, architecture, or database schema works. Designed for fast onboarding — each walkthrough is a visual mental model readable in under 2 minutes. Use when asked to walkthrough, explain a flow, trace a code path, show how something works, explain the architecture, visualize a database schema, or explore a data model.
+compatibility: Designed for Claude Code (or similar products). Output renders on GitHub, VS Code, Mermaid Live Editor, or any Mermaid-compatible viewer.
 allowed-tools: Bash Read Write Glob Grep Task
 metadata:
   author: Alexander Opalic
-  version: "1.0"
+  version: "2.0"
 ---
 
 # Codebase Walkthrough Generator
 
-Generate interactive HTML files with clickable Mermaid diagrams that give new developers a **quick mental model** of how a feature or system works. The goal is fast onboarding — a rough map of concepts and connections, not a code reference. Each walkthrough should be readable in under 2 minutes.
+Generate Mermaid diagram files (`.mmd`) that give new developers a **quick mental model** of how a feature or system works. The goal is fast onboarding — a rough map of concepts and connections, not a code reference. Each walkthrough should be readable in under 2 minutes.
 
-**Always dark mode.** Every walkthrough uses a pure black background (`#000000`), white text, and purple accents. Never generate light-mode walkthroughs.
+## Output Format
+
+The output is a single `.mmd` file containing a self-contained Mermaid diagram. This file renders natively on GitHub, in VS Code (with Mermaid extensions), in the [Mermaid Live Editor](https://mermaid.live), and in many other tools.
+
+The diagram itself contains **all the information**: node labels, descriptions, file paths, and relationship labels — everything embedded directly in the diagram. No separate detail panels or HTML needed.
 
 ## Workflow
 
@@ -34,7 +38,7 @@ If the request is vague, ask one clarifying question. Otherwise proceed.
 
 **Always read real source files before generating.** Never fabricate code paths.
 
-**Use the Task tool to delegate exploration to subagents.** This keeps the main context clean for HTML generation and parallelizes the research phase.
+**Use the Task tool to delegate exploration to subagents.** This keeps the main context clean for diagram generation and parallelizes the research phase.
 
 #### 2a. Identify areas to explore
 
@@ -49,7 +53,6 @@ Use `Task` with `subagent_type: "Explore"` to launch multiple agents **in a sing
 - How it connects to other pieces (imports, calls, data flow)
 - A suggested node ID (camelCase) and plain-English label (e.g., "Drawing Interaction", not "useDrawingInteraction()")
 - The primary file path(s)
-- **Only if truly illuminating**: a single key code snippet (max 5 lines) — most nodes should have no code
 
 **Tell each subagent to format its report as a list of nodes like this:**
 
@@ -59,37 +62,32 @@ NODE: drawingInteraction
   file: app/features/tools/useDrawingInteraction.ts
   purpose: Converts pointer events into shape data. This is the bridge between raw mouse input and the element model.
   connects_to: canvasRenderer (feeds shape data), toolState (reads active tool)
-  key_snippet (optional):
-    const element = createElement(tool, startPoint, currentPoint)
-    lang: typescript
 ```
-
-Note: Most nodes should NOT include a snippet. Only include one when it's the single most illuminating piece — a key type definition, the core 3-line algorithm, etc.
 
 **Example: splitting a "drawing tool" walkthrough into subagents:**
 
 ```
 Subagent 1: "Explore user input handling"
-→ Read tool selection, pointer event handling
-→ Report: purpose of each piece, how they connect
+-> Read tool selection, pointer event handling
+-> Report: purpose of each piece, how they connect
 
 Subagent 2: "Explore rendering pipeline"
-→ Read canvas rendering, scene management
-→ Report: what renders elements, how it gets triggered
+-> Read canvas rendering, scene management
+-> Report: what renders elements, how it gets triggered
 
 Subagent 3: "Explore element model and state"
-→ Read element types, state management
-→ Report: how elements are stored, what shape they have
+-> Read element types, state management
+-> Report: how elements are stored, what shape they have
 ```
 
-**Do NOT read the files yourself** — let the subagents do it. Your job is to orchestrate and then synthesize their results into the HTML.
+**Do NOT read the files yourself** — let the subagents do it. Your job is to orchestrate and then synthesize their results into the diagram.
 
 #### 2c. Synthesize subagent results (no more file reads)
 
 Once all subagents return, you have everything needed. **Do NOT read any more files or launch more subagents.** Go directly to Steps 3-4.
 
 Combine subagent findings into:
-1. **Node list** — ID, plain-English label, primary file(s), 1-2 sentence description, optional code snippet + lang
+1. **Node list** — ID, plain-English label, primary file(s), 1-2 sentence description
 2. **Edge list** — which nodes connect, with plain verb labels ("triggers", "feeds into", "produces")
 3. **Subgraph groupings** — 2-4 groups with approachable labels ("User Input", "Processing", "Output")
 
@@ -105,13 +103,25 @@ Pick the Mermaid diagram type based on the topic:
 |-------|-------------|----------------|
 | Feature flows, request lifecycles, architecture | **Flowchart** | `graph TD` / `graph LR` |
 | Database schemas, table relationships, data models | **ER Diagram** | `erDiagram` |
-| Mixed (API flow + DB schema) | **Both** — render two diagrams side by side or stacked | Flowchart + ER |
+| Mixed (API flow + DB schema) | **Both** — render two diagrams in the same file | Flowchart + ER |
 
 **Diagram sizing**: Keep to **5-12 nodes** grouped into **2-4 subgraphs**. This keeps the diagram scannable at a glance.
 
 #### Flowchart (`graph TD` / `graph LR`)
 
 **Direction**: Use `graph TD` (top-down) for hierarchical flows, `graph LR` (left-right) for sequential pipelines.
+
+**Node labels**: Each node label includes a **title**, a **brief description**, and **file path(s)** — all embedded directly in the node using line breaks. This makes the diagram self-contained.
+
+**Node label format** (using HTML-style line breaks):
+```
+nodeId["<b>Title</b><br/><i>Brief description of what this does</i><br/><code>path/to/file.ts</code>"]
+```
+
+For nodes with multiple files:
+```
+nodeId["<b>Title</b><br/><i>Description here</i><br/><code>path/to/file1.ts</code><br/><code>path/to/file2.ts</code>"]
+```
 
 **Node types** (styled by category):
 | Type | Style | Use for |
@@ -125,11 +135,11 @@ Pick the Mermaid diagram type based on the topic:
 
 **Subgraphs**: Group related nodes into 2-4 subgraphs with approachable mental-model labels (e.g., "User Input", "Core Logic", "Visual Output") — not technical layer names.
 
-**Node IDs**: Use descriptive camelCase IDs that map to the detail data (e.g., `drawingInteraction`, `canvasRenderer`).
-
-**Node labels in Mermaid**: Use plain-English labels — "Drawing Interaction", "Canvas Rendering" — not function names or file names.
+**Node IDs**: Use descriptive camelCase IDs (e.g., `drawingInteraction`, `canvasRenderer`).
 
 **Edges**: Label with plain verbs — "triggers", "feeds into", "reads", "produces", "watches". Not API method names.
+
+**Style definitions**: Always include `classDef` styles and `class` assignments for visual differentiation.
 
 #### ER Diagram (`erDiagram`)
 
@@ -169,59 +179,59 @@ erDiagram
 
 **Column markers**: `PK` (primary key), `FK` (foreign key), `UK` (unique).
 
-**Click handlers on ER diagrams**: Entities in ER diagrams don't natively support Mermaid `click` callbacks. Instead, add click listeners manually after render via `querySelectorAll('.entityLabel')` — see html-patterns.md for the pattern.
+### Step 4: Generate the Mermaid file
 
-### Step 4: Generate the HTML file
+Create a single `.mmd` file with the complete diagram.
 
-Create a single self-contained HTML file following the patterns in [references/html-patterns.md](references/html-patterns.md).
+**File location**: Write to the project root as `walkthrough-{topic}.mmd` (e.g., `walkthrough-canvas-drawing.mmd`). Use kebab-case for the topic slug.
 
-**File location**: Write to the project root as `walkthrough-{topic}.html` (e.g., `walkthrough-canvas-drawing.html`). Use kebab-case for the topic slug.
+**File structure**:
 
-**Architecture**: The HTML uses `<script type="module">` (native ES modules) — **not** Babel. This means:
-- Template literals (backticks) work fine — use them freely for multi-line strings
-- Shiki is imported via ESM and highlights code at startup
-- React/ReactDOM are loaded as UMD globals, accessed as `window.React` / `window.ReactDOM`
-- No JSX — use `React.createElement()` for all component rendering
+```mermaid
+%% Walkthrough: Title of the Walkthrough
+%% Description: 2-3 sentence TL;DR summary of what this diagram explains.
 
-**Required elements**:
-1. Title and subtitle describing the walkthrough scope
-2. **TL;DR summary** — 2-3 sentences rendered above the diagram as a visible card. A new dev reads this first, then explores.
-3. Mermaid flowchart with clickable nodes (5-12 nodes)
-4. Node detail panel showing: 1-2 sentence description, file path(s), optional code snippet
-5. Legend showing node type color coding
+graph TD
+  %% --- Subgroup: User Input ---
+  subgraph user_input["User Input"]
+    userPrompt["<b>User Prompt</b><br/><i>The natural-language request that triggers the walkthrough</i><br/><code>skills/walkthrough/skill.md</code>"]
+  end
 
-**Node detail data** — for each node, include:
-```js
-nodeId: {
-  title: "Drawing Interaction",
-  description: "Converts pointer events into shape data. This is the bridge between raw mouse input and the element model.",
-  files: ["app/features/tools/useDrawingInteraction.ts"],
-  // Optional — only include if it's the single most illuminating snippet
-  code: `const element = createElement(tool, startPoint, currentPoint)`,
-  lang: "typescript",
-}
+  %% --- Subgroup: Processing ---
+  subgraph processing["Processing"]
+    scopeUnderstanding["<b>Scope Understanding</b><br/><i>Clarifies what the user wants explained</i><br/><code>skills/walkthrough/skill.md:14-26</code>"]
+    parallelExploration["<b>Parallel Subagents</b><br/><i>Launches 2-4 Explore agents to read code in parallel</i><br/><code>skills/walkthrough/skill.md:28-84</code>"]
+  end
+
+  %% Edges
+  userPrompt -->|"triggers"| scopeUnderstanding
+  scopeUnderstanding -->|"defines areas"| parallelExploration
+
+  %% Node type styles
+  classDef component fill:#a855f7,stroke:#c084fc,color:#fff
+  classDef composable fill:#7c3aed,stroke:#a78bfa,color:#fff
+  classDef utility fill:#6d28d9,stroke:#8b5cf6,color:#fff
+  classDef external fill:#525252,stroke:#737373,color:#fff
+  classDef event fill:#d8b4fe,stroke:#e9d5ff,color:#000
+  classDef data fill:#9333ea,stroke:#a855f7,color:#fff
+
+  %% Node type assignments
+  class userPrompt event
+  class scopeUnderstanding utility
+  class parallelExploration composable
 ```
 
-Key points:
-- `description` = 1-2 plain-text sentences. Answer "what is this?" and "why does it exist?" Not "how does it work internally?"
-- `code` = **optional**. Only include if it's the single most illuminating snippet. Max 5 lines. Most nodes should have no code.
-- `lang` = Shiki language identifier. Only needed if `code` is present.
-- `files` = array of `"path"` or `"path:lines"` strings.
+**Key rules for the .mmd file**:
 
-**After writing the file**, open it in the user's browser:
-```bash
-open walkthrough-{topic}.html    # macOS
-```
+1. **Start with comments** — Title and TL;DR summary as `%%` comments at the top
+2. **Rich node labels** — Every node must include `<b>Title</b>`, `<i>description</i>`, and `<code>file path</code>` using HTML tags and `<br/>` line breaks
+3. **Descriptions are 1-2 sentences** — Answer "what is this?" and "why does it exist?"
+4. **File paths are real** — Every `<code>` path must point to an actual file in the codebase. Use `path:lines` format when relevant.
+5. **Group edges after subgraphs** — Define all edges in a block after the subgraph definitions for readability
+6. **Always include classDef and class** — Style definitions go at the end
+7. **Comment sections** — Use `%%` comments to separate logical sections (subgroups, edges, styles)
 
 ## Mermaid Conventions
-
-### Click binding
-Use Mermaid's callback syntax to make nodes interactive:
-```
-click nodeId nodeClickHandler "View details"
-```
-
-Where `nodeClickHandler` is a global JS function defined in the HTML.
 
 ### Subgraph naming
 Use approachable mental-model labels:
@@ -241,24 +251,28 @@ A ==>|"produces"| D
 
 Use `-->` for direct calls, `-.->` for reactive/watch relationships, `==>` for events/emissions.
 
+### Node shapes
+Use different shapes to convey meaning:
+```
+nodeId["label"]          %% Rectangle — default
+nodeId(["label"])        %% Stadium — entry/exit points
+nodeId{"label"}          %% Diamond — decisions
+nodeId[("label")]        %% Cylinder — databases/storage
+```
+
 ## Quality Checklist
 
 Before finishing, verify:
 - [ ] Diagram has **5-12 nodes** (not more)
-- [ ] Every node label is plain English (no function signatures or file names)
+- [ ] Every node label includes a title, description, and file path
+- [ ] Node titles are plain English (no function signatures or file names as titles)
 - [ ] No node description exceeds 2 sentences
-- [ ] Code snippets are absent or ≤5 lines (most nodes have no code)
-- [ ] TL;DR summary is present and ≤3 sentences
+- [ ] TL;DR summary is present as a `%%` comment at the top
 - [ ] Every node maps to a real file in the codebase
-- [ ] Code snippets (where present) are actual code, not fabricated
 - [ ] File paths are correct and relative to project root
 - [ ] The flowchart accurately represents the real code flow
-- [ ] Clicking any node shows its detail panel
 - [ ] The diagram renders without Mermaid syntax errors
-- [ ] The HTML file opens correctly in a browser
 - [ ] Subgraph labels are approachable ("User Input") not technical ("Composable Layer")
 - [ ] Edge labels are plain verbs ("triggers") not method names ("handlePointerDown()")
-
-## References
-
-- [references/html-patterns.md](references/html-patterns.md) — Complete HTML template, CSS, and JavaScript patterns
+- [ ] classDef styles and class assignments are included
+- [ ] The `.mmd` file is self-contained — no external dependencies
