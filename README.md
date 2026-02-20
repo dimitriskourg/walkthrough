@@ -1,24 +1,21 @@
 # Walkthrough Skill
 
-A skill that generates interactive HTML walkthroughs with clickable Mermaid diagrams — flowcharts and ER diagrams — to explain codebase features, flows, architecture, and database schemas.
+A skill that generates Mermaid diagram files (`.mmd`) — flowcharts and ER diagrams — to explain codebase features, flows, architecture, and database schemas.
 
 Inspired by [Amp's Shareable Walkthroughs](https://ampcode.com/news/walkthrough).
 
 ## What it does
 
-Ask your agent to walk you through any part of your codebase and it produces a self-contained HTML file with:
+Ask your agent to walk you through any part of your codebase and it produces a self-contained `.mmd` file with:
 
-- A **clickable Mermaid diagram** (flowchart or ER diagram) showing the key concepts and their connections
-- A **detail panel** for each node with a plain-English description, file paths, and optional code snippets
-- **Pan and zoom** — scroll to zoom, drag to pan, auto-fit on load
-- **Syntax highlighting** via Shiki for the rare nodes that include code
-- **Dark mode** — pure black background, white text, purple accents
+- A **Mermaid diagram** (flowchart or ER diagram) showing the key concepts and their connections
+- **Rich node labels** with title, description, and file paths embedded directly in each node
+- **Subgraph groupings** for logical organization
+- **Color-coded node types** (components, utilities, events, data, etc.)
 
 The goal is fast onboarding: give a new developer a mental model of how something works in under 2 minutes. Not a code reference — a map.
 
-**[Live demo — walkthrough of the walkthrough skill itself](https://alexanderop.github.io/walkthrough/examples/walkthrough-how-it-works.html)**
-
-![Generated walkthrough example](image.png)
+The `.mmd` output renders natively on **GitHub**, in **VS Code** (with Mermaid extensions), in the [**Mermaid Live Editor**](https://mermaid.live), and in many other tools.
 
 ## Usage
 
@@ -36,8 +33,7 @@ explain the tables
 The agent will:
 1. Explore the relevant parts of your codebase using parallel subagents
 2. Synthesize findings into 5-12 key concepts and their connections
-3. Generate a single `walkthrough-{topic}.html` file in the project root
-4. Open it in your browser
+3. Generate a single `walkthrough-{topic}.mmd` file in the project root
 
 ## Examples
 
@@ -71,29 +67,34 @@ your-project/
     skills/
       walkthrough/
         skill.md
-        references/
-          html-patterns.md
 ```
 
 ## Structure
 
 ```
 skills/walkthrough/
-  skill.md                      # Main skill definition
-  references/
-    html-patterns.md            # HTML template, CSS, and JS patterns reference
+  skill.md              # Main skill definition
 ```
 
-- **skill.md** — The skill prompt that the agent follows. Defines the workflow: scope understanding, parallel codebase exploration, diagram type selection, and HTML generation.
-- **references/html-patterns.md** — Complete reference for the generated HTML files: React component architecture, Mermaid config, Shiki setup, color palette, pan/zoom implementation, and all the patterns needed to produce a working walkthrough.
+- **skill.md** — The skill prompt that the agent follows. Defines the workflow: scope understanding, parallel codebase exploration, diagram type selection, and Mermaid file generation.
 
-## Tech stack (generated files)
+## Output format
 
-The output HTML files are fully self-contained with CDN dependencies:
+The generated `.mmd` files are self-contained Mermaid diagrams. Each node embeds its title, description, and file paths directly in the label:
 
-- **React 18** (UMD) — component rendering via `React.createElement()`
-- **Tailwind CSS** (CDN) — utility-first styling
-- **Mermaid 11** — diagram rendering (flowcharts and ER diagrams)
-- **Shiki** (ESM) — syntax highlighting with `vitesse-dark` theme
+```mermaid
+graph TD
+  subgraph core["Core Logic"]
+    authService["<b>Auth Service</b><br/><i>Handles login, logout, and token refresh</i><br/><code>src/services/auth.ts</code>"]
+    tokenStore["<b>Token Store</b><br/><i>Persists JWT tokens in secure storage</i><br/><code>src/stores/token.ts</code>"]
+  end
 
-No build step. Just open the HTML file in a browser.
+  authService -->|"reads/writes"| tokenStore
+
+  classDef composable fill:#7c3aed,stroke:#a78bfa,color:#fff
+  classDef data fill:#9333ea,stroke:#a855f7,color:#fff
+  class authService composable
+  class tokenStore data
+```
+
+No build step, no CDN dependencies. Just a `.mmd` file that renders anywhere Mermaid is supported.
